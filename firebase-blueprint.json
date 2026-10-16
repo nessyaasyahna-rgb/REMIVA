@@ -1,0 +1,136 @@
+{
+  "entities": {
+    "Drug": {
+      "title": "Drug",
+      "description": "Master drug inventory catalog for the pharmacy",
+      "type": "object",
+      "properties": {
+        "barcode": { "type": "string", "description": "Barcode or SKU identifier" },
+        "name": { "type": "string", "description": "Brand/Commercial name of medicine" },
+        "genericName": { "type": "string", "description": "Generic name of medicine" },
+        "category": { "type": "string", "description": "Drug classification" },
+        "indication": { "type": "string", "description": "Therapeutic indication" },
+        "unit": { "type": "string", "description": "Dispensing unit" },
+        "buyPrice": { "type": "number", "description": "Purchase cost from PBF" },
+        "sellPrice": { "type": "number", "description": "Retail selling price" },
+        "minStockThreshold": { "type": "integer", "description": "Safety stock alert threshold" },
+        "isFastMoving": { "type": "boolean", "description": "Fast-moving status" },
+        "requirePrescription": { "type": "boolean", "description": "Prescription mandate" },
+        "isDeleted": { "type": "boolean", "description": "Soft delete flag" },
+        "lastModified": { "type": "integer", "description": "Epoch timestamp of last update" },
+        "updatedBy": { "type": "string", "description": "Staff who last updated" }
+      },
+      "required": ["barcode", "name", "category", "unit", "buyPrice", "sellPrice"]
+    },
+    "StockBatch": {
+      "title": "StockBatch",
+      "description": "FEFO batch entry for inventory item tracking",
+      "type": "object",
+      "properties": {
+        "drugId": { "type": "string", "description": "Associated master drug ID" },
+        "batchNumber": { "type": "string", "description": "Lot / Batch number" },
+        "expiryDate": { "type": "string", "description": "Expiry date formatted YYYY-MM-DD" },
+        "etalaseStock": { "type": "integer", "description": "Stock count on storefront shelves" },
+        "gudangStock": { "type": "integer", "description": "Stock count in warehouse reserve" },
+        "supplierName": { "type": "string", "description": "Distributor/PBF supplier name" },
+        "lastModified": { "type": "integer", "description": "Epoch timestamp of modification" }
+      },
+      "required": ["drugId", "batchNumber", "expiryDate", "etalaseStock", "gudangStock"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Point-of-sale customer sale record",
+      "type": "object",
+      "properties": {
+        "invoiceNumber": { "type": "string", "description": "Unique POS receipt invoice number" },
+        "timestamp": { "type": "integer", "description": "Epoch millisecond sale time" },
+        "cashierName": { "type": "string", "description": "Cashier staff name" },
+        "customerName": { "type": "string", "description": "Customer name" },
+        "itemsSummary": { "type": "string", "description": "Summary JSON or text of items sold" },
+        "subtotal": { "type": "number", "description": "Subtotal before discount" },
+        "discountPercent": { "type": "number", "description": "Discount percentage" },
+        "discountAmount": { "type": "number", "description": "Discount in Rupiah" },
+        "grandTotal": { "type": "number", "description": "Final paid total" },
+        "paymentMethod": { "type": "string", "description": "Payment type: CASH, QRIS, DANA, DEBIT" },
+        "cashGiven": { "type": "number", "description": "Cash received" },
+        "changeAmount": { "type": "number", "description": "Change returned" },
+        "isPrescription": { "type": "boolean", "description": "Prescription sale indicator" },
+        "doctorName": { "type": "string", "description": "Doctor name if prescription" },
+        "prescriptionNumber": { "type": "string", "description": "Doctor prescription ref" }
+      },
+      "required": ["invoiceNumber", "cashierName", "subtotal", "grandTotal", "paymentMethod"]
+    },
+    "StockMutation": {
+      "title": "StockMutation",
+      "description": "Warehouse to storefront stock mutation movement",
+      "type": "object",
+      "properties": {
+        "drugId": { "type": "string", "description": "Target drug ID" },
+        "drugName": { "type": "string", "description": "Target drug name" },
+        "batchNumber": { "type": "string", "description": "Batch number moved" },
+        "fromLocation": { "type": "string", "description": "Source location" },
+        "toLocation": { "type": "string", "description": "Destination location" },
+        "quantity": { "type": "integer", "description": "Units transferred" },
+        "timestamp": { "type": "integer", "description": "Transfer timestamp" },
+        "note": { "type": "string", "description": "Transfer note" },
+        "operatorName": { "type": "string", "description": "Staff in charge" }
+      },
+      "required": ["drugId", "batchNumber", "quantity", "fromLocation", "toLocation"]
+    },
+    "StockOpnameRecord": {
+      "title": "StockOpnameRecord",
+      "description": "Stock audit and verification summary record",
+      "type": "object",
+      "properties": {
+        "dateFormatted": { "type": "string", "description": "Formatted audit date" },
+        "timestamp": { "type": "integer", "description": "Audit epoch timestamp" },
+        "auditorName": { "type": "string", "description": "Auditor staff name" },
+        "totalDiscrepancyUnits": { "type": "integer", "description": "Variance unit sum" },
+        "totalLossValuation": { "type": "number", "description": "Total loss value in IDR" },
+        "status": { "type": "string", "description": "Audit status: COMPLETED" },
+        "notes": { "type": "string", "description": "Audit summary observations" }
+      },
+      "required": ["dateFormatted", "auditorName", "status"]
+    },
+    "UserAccount": {
+      "title": "UserAccount",
+      "description": "Pharmacy staff profile and role",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID or local user ID" },
+        "username": { "type": "string", "description": "Username handle" },
+        "email": { "type": "string", "description": "Email address" },
+        "fullName": { "type": "string", "description": "Full staff display name" },
+        "role": { "type": "string", "description": "Pharmacy position role: ADMIN, APOTEKER, TTK, KASIR" },
+        "phone": { "type": "string", "description": "Phone number" }
+      },
+      "required": ["username", "email", "fullName", "role"]
+    }
+  },
+  "firestore": {
+    "/drugs/{drugId}": {
+      "schema": "#/entities/Drug",
+      "description": "Shared real-time medicine inventory for multi-device sync"
+    },
+    "/stock_batches/{batchId}": {
+      "schema": "#/entities/StockBatch",
+      "description": "Shared real-time FEFO stock batches across all devices"
+    },
+    "/transactions/{transactionId}": {
+      "schema": "#/entities/Transaction",
+      "description": "Shared real-time cashier transactions across all devices"
+    },
+    "/stock_mutations/{mutationId}": {
+      "schema": "#/entities/StockMutation",
+      "description": "Shared real-time stock transfers between warehouse and shelves"
+    },
+    "/stock_opname_records/{recordId}": {
+      "schema": "#/entities/StockOpnameRecord",
+      "description": "Shared physical inventory audit records across devices"
+    },
+    "/user_accounts/{userId}": {
+      "schema": "#/entities/UserAccount",
+      "description": "Shared staff and user roster for multi-device login"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "Remix FARMIVA",
+  "description": "Commercial Pharmacy \u0026 Drugstore Management System featuring FEFO inventory, warehouse checklist, POS cashier, SIPNAP reporting, and multi-device cloud synchronization.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

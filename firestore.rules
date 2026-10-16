@@ -1,0 +1,119 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation for Master Medicine
+    function isValidDrug(data) {
+      return data.barcode is string && data.barcode.size() > 0 && data.barcode.size() <= 128 &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 250 &&
+             (!('genericName' in data) || (data.genericName is string && data.genericName.size() <= 250)) &&
+             data.category is string && data.category.size() <= 60 &&
+             (!('indication' in data) || (data.indication is string && data.indication.size() <= 1000)) &&
+             data.unit is string && data.unit.size() <= 60 &&
+             (data.buyPrice is number && data.buyPrice >= 0) &&
+             (data.sellPrice is number && data.sellPrice >= 0) &&
+             (!('minStockThreshold' in data) || (data.minStockThreshold is number && data.minStockThreshold >= 0)) &&
+             (!('isFastMoving' in data) || data.isFastMoving is bool) &&
+             (!('requirePrescription' in data) || data.requirePrescription is bool) &&
+             (!('isDeleted' in data) || data.isDeleted is bool);
+    }
+
+    // Validation for Stock Batches (FEFO)
+    function isValidBatch(data) {
+      return data.drugId is string && data.drugId.size() > 0 &&
+             data.batchNumber is string && data.batchNumber.size() > 0 && data.batchNumber.size() <= 100 &&
+             data.expiryDate is string && data.expiryDate.size() <= 30 &&
+             (data.etalaseStock is number && data.etalaseStock >= 0) &&
+             (data.gudangStock is number && data.gudangStock >= 0) &&
+             (!('supplierName' in data) || (data.supplierName is string && data.supplierName.size() <= 200));
+    }
+
+    // Validation for Sales Transactions
+    function isValidTransaction(data) {
+      return data.invoiceNumber is string && data.invoiceNumber.size() > 0 && data.invoiceNumber.size() <= 100 &&
+             data.cashierName is string && data.cashierName.size() > 0 && data.cashierName.size() <= 150 &&
+             (!('customerName' in data) || (data.customerName is string && data.customerName.size() <= 150)) &&
+             (data.subtotal is number && data.subtotal >= 0) &&
+             (data.grandTotal is number && data.grandTotal >= 0) &&
+             data.paymentMethod is string && data.paymentMethod.size() <= 50;
+    }
+
+    // Validation for Stock Transfers/Mutations
+    function isValidMutation(data) {
+      return data.drugId is string &&
+             data.batchNumber is string &&
+             data.fromLocation is string &&
+             data.toLocation is string &&
+             (data.quantity is number && data.quantity > 0);
+    }
+
+    // Validation for Stock Opname Record
+    function isValidStockOpname(data) {
+      return data.dateFormatted is string &&
+             data.auditorName is string && data.auditorName.size() > 0 &&
+             data.status is string;
+    }
+
+    // Validation for User Account
+    function isValidUserAccount(data) {
+      return data.username is string && data.username.size() >= 2 && data.username.size() <= 100 &&
+             data.email is string && data.email.size() <= 150 &&
+             data.fullName is string && data.fullName.size() <= 150 &&
+             data.role is string;
+    }
+
+    // ==========================================
+    // COLLECTION RULES (Multi-Device Pharmacy System)
+    // ==========================================
+
+    match /drugs/{drugId} {
+      allow read: if true;
+      allow create: if isValidDrug(incoming());
+      allow update: if isValidDrug(incoming());
+      allow delete: if true;
+    }
+
+    match /stock_batches/{batchId} {
+      allow read: if true;
+      allow create: if isValidBatch(incoming());
+      allow update: if isValidBatch(incoming());
+      allow delete: if true;
+    }
+
+    match /transactions/{transactionId} {
+      allow read: if true;
+      allow create: if isValidTransaction(incoming());
+      allow update: if isValidTransaction(incoming());
+      allow delete: if true;
+    }
+
+    match /stock_mutations/{mutationId} {
+      allow read: if true;
+      allow create: if isValidMutation(incoming());
+      allow update: if isValidMutation(incoming());
+      allow delete: if true;
+    }
+
+    match /stock_opname_records/{recordId} {
+      allow read: if true;
+      allow create: if isValidStockOpname(incoming());
+      allow update: if isValidStockOpname(incoming());
+      allow delete: if true;
+    }
+
+    match /user_accounts/{userId} {
+      allow read: if true;
+      allow create: if isValidUserAccount(incoming());
+      allow update: if isValidUserAccount(incoming());
+      allow delete: if true;
+    }
+  }
+}
